@@ -1,9 +1,10 @@
+let g:plugin_directory = $HOME . '/.yankpicker/'
+let g:plugin_data_file_name = 'yanked_texts.txt'
+
+
 function! yankpicker#showYankHistory() abort
-    let yank_history = []
-    for i in range(0, 9, 1)
-        call add(yank_history, getreg(string(i)))
-    endfor
-    call add(yank_history, getreg('0'))
+    let lines = readfile(g:plugin_directory . g:plugin_data_file_name)
+    let yank_history = lines
     call add(yank_history, getreg('+'))
 
     let max_len = max(map(copy(yank_history), 'len(v:val)'))
@@ -11,7 +12,7 @@ function! yankpicker#showYankHistory() abort
     let content = []
     for i in range(len(yank_history))
         let item = yank_history[i]
-        call add(content, printf('%-'.max_len.'s : %s', item, i == len(yank_history) - 1 ? '(Clipboard)' : '('.i.')'))
+        call add(content, printf('%-'.max_len.'s : %s', item, i == len(yank_history) - 1 ? '(Clipboard)' : '('.(i+1).')'))
     endfor
     let g:yank_selected_index = 0
 
@@ -35,8 +36,6 @@ function! yankpicker#showYankHistory() abort
     let g:yank_history = yank_history
     let g:content_length = len(content)
 endfunction
-
-
 
 
 function! yankpicker#yankHistoryFilter(id, key) abort
@@ -77,3 +76,22 @@ function! yankpicker#yankHistoryFilter(id, key) abort
 endfunction
 
 
+function! yankpicker#saveYankedText()
+
+    if !isdirectory(g:plugin_directory)
+        call mkdir(g:plugin_directory, 'p') 
+    endif
+    if !filereadable(g:plugin_directory . g:plugin_data_file_name)
+        call writefile([], g:plugin_directory . g:plugin_data_file_name)
+    endif
+
+    let lines = readfile(g:plugin_directory . g:plugin_data_file_name)
+
+    let yanked_text_list = add(lines, getreg('"'))
+
+    if len(yanked_text_list) > g:loaded_yankpicker_save_count
+        let yanked_text_list = yanked_text_list[(len(yanked_text_list) - g:loaded_yankpicker_save_count) : (g:loaded_yankpicker_save_count)]
+    endif
+
+    call writefile(yanked_text_list, g:plugin_directory . g:plugin_data_file_name)
+endfunction
